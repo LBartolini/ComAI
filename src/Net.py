@@ -16,6 +16,10 @@ def tanh(x):
     out = (np.exp(x) - np.exp(-x)) / (np.exp(x) + np.exp(-x))
     return out
 
+def softmax(x):
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
 class Network(object):
     def __init__(self, shape, weights_path=None):
         self.shape = shape
