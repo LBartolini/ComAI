@@ -19,8 +19,8 @@ class Agent():  # aka Gino
         self.sleep = np.random.randint(0, turns_to_sleep)
         self.now = 0  # 0=ready, 1=sleeping, 2=waiting-other
         # 3 output = 3 possible actions to do
-        self.hearing = Network([n_word, 5, 3])
-        self.speaking = Network([3, 5, n_word])  # 10 output = 10 words
+        self.hearing = Network([n_word, 1, 3])
+        self.speaking = Network([3, 1, n_word])  # 10 output = 10 words
     
     def reset(self):
         self.score = 0

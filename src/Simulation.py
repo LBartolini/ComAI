@@ -2,7 +2,7 @@ import numpy as np
 from Net import Network
 from Agent import Agent
 import random
-
+import matplotlib.pyplot as plt
 
 def genetic_change(bests, n_total):
     new_nets = []
@@ -64,15 +64,17 @@ def assign_actions(speakers, listeners):
         word = speaker.shout_word(action_requested)
         is_action_done_correct = listeners[i].do_action(word, action_requested)
         if is_action_done_correct:
-            speaker.change_score(0.5)
+            speaker.change_score(1)
             listeners[i].change_score(1)
         else:
-            speaker.change_score(-0.15)
-            listeners[i].change_score(-0.25)
+            speaker.change_score(-1)
+            listeners[i].change_score(-1)
 
 
-def print_best_score(population):
-    print(find_bests(population, 1)[0].score)
+def get_scores(population):
+    scores = [ag.score for ag in population]
+
+    return np.max(scores), np.mean(scores), np.std(scores)
 
 
 def find_bests(population, n_best):
@@ -93,27 +95,35 @@ def make_new_population(population, population_size, n_best):
         population[i].reset()
         population[i].hearing._import(weights[0])
         population[i].speaking._import(weights[1])
-    
+
     return population
 
 
 def game(population_size, n_best, n_word, epochs, turns_per_epoch, turns_to_sleep, verbose=False):
-    population = [Agent(n_word, turns_to_sleep) for _ in range(population_size)]
+    population = [Agent(n_word, turns_to_sleep)
+                  for _ in range(population_size)]
+    data_avg = []
+    data_std = []
 
     for epoch in range(epochs):
         print("Epoch ", epoch)
         for _ in range(turns_per_epoch):
+            random.shuffle(population)
             check_sleeping(population)
             ready_agents = get_ready(population)
             speakers = random.sample(ready_agents, int(len(ready_agents)/2))
             listeners = get_remaining_ready(ready_agents, speakers)
             assign_actions(speakers, listeners)
 
+        new_max, new_avg, new_std = get_scores(population)
+        data_avg.append(new_avg)
+        data_std.append(new_std)
+
         if verbose:
-            print_best_score(population)
+            print(new_max)
 
         population = make_new_population(population, population_size, n_best)
-    
+
     rnd = random.choice(population)
     word1 = rnd.shout_word([0, 1, 0])
     word2 = rnd.shout_word([1, 0, 0])
@@ -124,6 +134,16 @@ def game(population_size, n_best, n_word, epochs, turns_per_epoch, turns_to_slee
     print(f"Word: {word2} -> Action: {rnd.do_action(word2, [1, 0, 0])}\n")
     print(f"Input: [0, 0, 1] -> Word : {word3}")
     print(f"Word: {word3} -> Action: {rnd.do_action(word3, [0, 0, 1])}\n")
+
+    data_avg = np.array(data_avg)
+    data_std = np.array(data_std)
+
+    plt.figure(figsize=(20, 5))
+    plt.plot(data_avg, c='red', label="Scores")
+    plt.fill_between(x=range(epochs), y1=data_avg-data_std,y2=data_avg+data_std, alpha=0.3, color='red')
+    plt.xlabel("Epoch")
+    plt.ylabel("Score")
+    plt.show()
 
 
 if __name__ == '__main__':
